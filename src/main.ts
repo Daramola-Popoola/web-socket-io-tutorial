@@ -1,22 +1,34 @@
-// import { createServer } from 'http';
-import express from 'express';
+import express, { Express } from "express";
+import { join } from "path";
+import { createServer } from "http";
 import { Server } from 'socket.io';
+import { createSendPacket } from "./utils/util";
 
-//* initialize express app
-const app = express();
-// const server = createServer(app);
-app.use(express.static('src/public'));
-const PORT = process.env.PORT || 8800;
-const server = app.listen(PORT);
 
-// TODO: Add the middleware for static files
-const io = new Server(server, {});
+const app: Express = express();
 
-io.on('connection', (socket) => {
-    console.log('a user connected with socket', socket.id);
+const server = createServer(app);
+const IO = new Server(server);
+
+app.use(express.static(join(__dirname, 'public')));
+
+IO.on('connection', (socket) => {
+    console.log('a user has connected, id:', socket.id);
+    
+    socket.emit('message', createSendPacket({username: 'ChatCord Bot', data: 'welcome to ChatCord Clone'}));
+    
+    socket.broadcast.emit('message', createSendPacket({username: 'ChatCord Bot', data: 'a new user has joined the chat'}));
+    
+    socket.on('disconnect', () => {
+        IO.emit('message', createSendPacket({username: 'ChatCord Bot', data: 'a user has left the chat'}));
+    });
+    
+    socket.on('chatMessage', packet =>  {
+        IO.emit('message', createSendPacket({data: packet}));
+    })
 })
 
-/* server.listen(() => {
-    console.log(`Server is running on port ${PORT}`);
-
-}) */
+const PORT = process.env.PORT || 8800
+server.listen(PORT, () => {
+    console.log(`server running on port ${PORT}`)
+})
