@@ -8,3 +8,9 @@ export interface SendPacketFormat {
     message: any;
     time: string;
 }
+
+export interface UserDBArgs {
+    id: string;
+    username: string;
+    room: string;
+}
